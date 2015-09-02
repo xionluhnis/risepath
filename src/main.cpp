@@ -22,7 +22,8 @@ struct LeafProcessor
     {
         // Note: this code must be thread-safe.
         // Iterate over a subrange of the leaf iterator's iteration space.
-        for ( ; range; ++range) {
+        for ( ; range; ++range)
+        {
             // Retrieve the leaf node to which the iterator is pointing.
             const LeafNode& leaf = *range.iterator();
             // Update the global counter.
@@ -31,14 +32,13 @@ struct LeafProcessor
     }
 };
 
-//========================================================================
-int main( ){
 
-    openvdb::initialize();
+void voxels(){
+  openvdb::initialize();
     // Generate a level set grid.
     openvdb::FloatGrid::Ptr grid =
         openvdb::tools::createLevelSetSphere<openvdb::FloatGrid>(/*radius=*/20.0,
-            /*center=*/openvdb::Vec3f(1.5, 2, 3), /*voxel size=*/0.5);
+                /*center=*/openvdb::Vec3f(1.5, 2, 3), /*voxel size=*/0.5);
     // Construct a functor for use with tbb::parallel_for()
     // that processes the leaf nodes of a FloatGrid.
     typedef LeafProcessor<openvdb::FloatGrid> FloatLeafProc;
@@ -52,14 +52,19 @@ int main( ){
     // since all of the active voxels in a level set grid are stored at the
     // leaf level (that is, there are no active tiles in a level set grid).
     assert(activeLeafVoxelCount == grid->activeVoxelCount());
+}
+
+//========================================================================
+int main( )
+{
 
 
 
-	ofSetupOpenGL(1024,768, OF_WINDOW);			// <-------- setup the GL context
+    ofSetupOpenGL(1024,768, OF_WINDOW);			// <-------- setup the GL context
 
-	// this kicks off the running of my app
-	// can be OF_WINDOW or OF_FULLSCREEN
-	// pass in width and height too:
-	ofRunApp( new ofApp());
+    // this kicks off the running of my app
+    // can be OF_WINDOW or OF_FULLSCREEN
+    // pass in width and height too:
+    ofRunApp( new ofApp());
 
 }
