@@ -28,8 +28,7 @@ void ofApp::setup()
     light.enable();
     light.setPointLight();
     light.setPosition(0, 0, 300);
-    cam.enableMouseMiddleButton();
-    cam.setDistance(13.0f);
+    resetCam();
 
     // load the button images
     const char * files[] = {
@@ -46,6 +45,33 @@ void ofApp::setup()
         dx += ui[i].data.getWidth() + m;
         ui[i].dx = dx;
         ui[i].dy = m;
+    }
+}
+
+void ofApp::resetCam()
+{
+    cam.enableMouseMiddleButton();
+    cam.setDistance(13.0f);
+    cam.setNearClip(0.1f);
+    cam.setPosition(0, -10.0f, 3.0f);
+    cam.setTarget(ofVec3f(0.0f, 0.0f, 0.0f));
+}
+
+/**
+ * Fix the camera to have e_z as up vector all the time
+ *
+ * Note: when resetting, the camera looks at (0.0, 0.0, 0.0) but the distance from it may be too small and then
+ * the result is ill defined => need to fix it
+ */
+void ofApp::fixCam()
+{
+    // reset up direction unless we're perpendicular to it
+    float angleZUp = cam.getUpDir().dot(ofVec3f(0.0f, 0.0f, 1.0f));
+    if(angleZUp > 1e-4f){
+        cam.lookAt(cam.getTarget(), ofVec3f(0.0f, 0.0f, 1.0f));
+    } else if(angleZUp == 0.0f){
+        // if the above works, this should never happen (but it does when cam.reset() is called)
+        resetCam();
     }
 }
 
@@ -139,6 +165,7 @@ void ofApp::draw()
     ofColor edgeColor(0, 0, 0);
     ofBackgroundGradient(centerColor, edgeColor, OF_GRADIENT_CIRCULAR);
 
+    fixCam();
     cam.begin();
     float ticks = 10.0f * float(1 << resolveLevel);
     ofDrawGrid(10.0f, ticks, false, false, false, true);
@@ -182,6 +209,9 @@ void ofApp::keyPressed(int key)
         break;
     case 'h':
         showHelp = !showHelp;
+        break;
+    case 't':
+        selectTool(static_cast<Tool>((currentTool + static_cast<int>(Unknown) - 1) % static_cast<int>(Unknown)));
         break;
     case 'r':
     {
@@ -241,33 +271,12 @@ void ofApp::mousePressed(int x, int y, int button)
     for(unsigned int i = 0; i < ui.size(); ++i){
       if(ui[i].hover){
           tool = static_cast<Tool>(i);
-          ui[currentTool].state = false; // toggle current off
-          ui[i].state = true;
           break;
       }
     }
     if(tool != Unknown){
-        currentTool = tool;
-        // switch camera off unless it's move
-        if(currentTool != Move){
-            cam.disableMouseInput();
-            cam.disableMouseMiddleButton();
-        }
-        switch(tool){
-            case Move:
-                cam.enableMouseInput();
-                cam.enableMouseMiddleButton();
-                break;
-            case Pen:
-            case Pencil:
-            case Eraser:
-            case Swirl:
-                // TODO show
-                break;
-            default:
-              break;
-        }
-        return; // we're done
+        selectTool(tool);
+        return;
     }
     // slider drag?
     ofRectangle rect = resolveSlider();
@@ -310,4 +319,33 @@ void ofApp::gotMessage(ofMessage msg)
 void ofApp::dragEvent(ofDragInfo dragInfo)
 {
 
+}
+
+void ofApp::selectTool(Tool tool)
+{
+    if(tool == Unknown) return;
+    // change state
+    ui[currentTool].state = false; // toggle current off
+    ui[i].state = true;
+    // update current tool
+    currentTool = tool;
+    // switch camera off unless it's move
+    if(currentTool != Move){
+        cam.disableMouseInput();
+        cam.disableMouseMiddleButton();
+    }
+    switch(tool){
+        case Move:
+            cam.enableMouseInput();
+            cam.enableMouseMiddleButton();
+            break;
+        case Pen:
+        case Pencil:
+        case Eraser:
+        case Swirl:
+            // TODO show
+            break;
+        default:
+          break;
+    }
 }

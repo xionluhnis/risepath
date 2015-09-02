@@ -47,6 +47,11 @@ class ofApp : public ofBaseApp{
 
 		ofVec3f mouseOnPlane();
 
+		void resetCam();
+		void fixCam();
+
+		void selectTool(Tool tool);
+
     private:
         // World objects
         ofEasyCam cam;
