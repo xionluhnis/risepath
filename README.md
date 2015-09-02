@@ -18,7 +18,7 @@ make && make run
 
 # TODO
 
-* Add interactive grid with resolution slider
+* Add <Ctrl> as mode for Z control
 * Draw with pen (different types maybe) the path to generate expanding material on the current plane
 * Visualize expansion parameters (set of arrows for the directions of interest = on the side, and on the forefront)
 * Generate expansion using the parameters

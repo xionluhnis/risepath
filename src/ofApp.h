@@ -21,10 +21,10 @@ struct ofButton {
 
 enum Tool {
     Eraser  = 0,
-    Pen     = 1,
-    Pencil  = 2,
-    Move    = 3,
-    Swirl   = 4,
+    Swirl   = 1,
+    Pen     = 2,
+    Pencil  = 3,
+    Move    = 4,
     Unknown = 5
 };
 
@@ -33,6 +33,7 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+		void drawUI();
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -44,12 +45,20 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 
+		ofVec3f mouseOnPlane();
+
     private:
+        // World objects
         ofEasyCam cam;
         ofLight light;
 
-        // UI
+        // Parameters
         Tool currentTool;
         bool showHelp, showTools;
+        unsigned int resolveLevel;
+        float currentZ;
+
+        // UI
         std::vector<ofButton> ui;
+        bool dragLevel;
 };
