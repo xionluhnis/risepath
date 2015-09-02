@@ -215,10 +215,11 @@ void ofStableCam::updateTranslation(){
 			bDoTranslate = false;
 		}
 	}
-	ofVec3f delta = (getXAxis() * moveX) + (getYAxis() * moveY) + (getZAxis() * moveZ);
+	ofVec3f deltaXY = getXAxis() * moveX + getYAxis() * moveY;
+	ofVec3f deltaZ =  getZAxis() * moveZ;
   // stable movement => move both position and target
-	target.move(delta);
-	move(delta);
+	target.move(deltaXY);
+	move(deltaXY + deltaZ);
 }
 //----------------------------------------
 void ofStableCam::updateRotation(){
