@@ -28,7 +28,6 @@ void ofApp::setup()
     light.enable();
     light.setPointLight();
     light.setPosition(0, 0, 300);
-    resetCam();
 
     // load the button images
     const char * files[] = {
@@ -45,33 +44,6 @@ void ofApp::setup()
         dx += ui[i].data.getWidth() + m;
         ui[i].dx = dx;
         ui[i].dy = m;
-    }
-}
-
-void ofApp::resetCam()
-{
-    cam.enableMouseMiddleButton();
-    cam.setDistance(13.0f);
-    cam.setNearClip(0.1f);
-    cam.setPosition(0, -10.0f, 3.0f);
-    cam.setTarget(ofVec3f(0.0f, 0.0f, 0.0f));
-}
-
-/**
- * Fix the camera to have e_z as up vector all the time
- *
- * Note: when resetting, the camera looks at (0.0, 0.0, 0.0) but the distance from it may be too small and then
- * the result is ill defined => need to fix it
- */
-void ofApp::fixCam()
-{
-    // reset up direction unless we're perpendicular to it
-    float angleZUp = cam.getUpDir().dot(ofVec3f(0.0f, 0.0f, 1.0f));
-    if(angleZUp > 1e-4f){
-        cam.lookAt(cam.getTarget(), ofVec3f(0.0f, 0.0f, 1.0f));
-    } else if(angleZUp == 0.0f){
-        // if the above works, this should never happen (but it does when cam.reset() is called)
-        resetCam();
     }
 }
 
@@ -165,7 +137,6 @@ void ofApp::draw()
     ofColor edgeColor(0, 0, 0);
     ofBackgroundGradient(centerColor, edgeColor, OF_GRADIENT_CIRCULAR);
 
-    fixCam();
     cam.begin();
     float ticks = 10.0f * float(1 << resolveLevel);
     ofDrawGrid(10.0f, ticks, false, false, false, true);
@@ -326,7 +297,7 @@ void ofApp::selectTool(Tool tool)
     if(tool == Unknown) return;
     // change state
     ui[currentTool].state = false; // toggle current off
-    ui[i].state = true;
+    ui[tool].state = true;
     // update current tool
     currentTool = tool;
     // switch camera off unless it's move

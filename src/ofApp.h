@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "camera/ofStableCam.h"
 
 struct ofButton {
   ofImage data;
@@ -54,7 +55,7 @@ class ofApp : public ofBaseApp{
 
     private:
         // World objects
-        ofEasyCam cam;
+        ofStableCam cam;
         ofLight light;
 
         // Parameters
