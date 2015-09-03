@@ -35,6 +35,7 @@ class ofApp : public ofBaseApp{
 		void update();
 		void draw();
 		void drawUI();
+		void drawGrid();
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -48,10 +49,8 @@ class ofApp : public ofBaseApp{
 
 		ofVec3f mouseOnPlane();
 
-		void resetCam();
-		void fixCam();
-
 		void selectTool(Tool tool);
+		float getCellSize() const;
 
     private:
         // World objects
@@ -62,9 +61,11 @@ class ofApp : public ofBaseApp{
         Tool currentTool;
         bool showHelp, showTools;
         unsigned int resolveLevel;
-        float currentZ;
+        float currentZ, startZ, lastZ;
 
         // UI
         std::vector<ofButton> ui;
         bool dragLevel;
+        int startX, startY;
+        int lastX, lastY;
 };

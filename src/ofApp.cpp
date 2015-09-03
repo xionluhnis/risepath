@@ -1,13 +1,23 @@
 #include "ofApp.h"
 
 #include <iostream>
-#define MAX_RESOLUTION 5
+#define MAX_RESOLUTION    5
+#define MODE_Z_KEY        2304
+#define MODE_Z_KEY_LEFT   2305
+#define MODE_Z_KEY_RIGHT  2306
 
 #include "rays/Plane.h"
 #include "rays/Ray.h"
 
 static float round(float f) {
   return std::floor(f + 0.5f);
+}
+static ofRectangle resolveSlider() {
+    int x = ofGetViewportWidth() - 20 - 48;
+    int w = 32;
+    int y = 20 + 64 + 20 + 20;
+    int h = ofGetViewportHeight() - y - 20;
+    return ofRectangle(x, y, w, h);
 }
 
 //--------------------------------------------------------------
@@ -65,13 +75,187 @@ void ofApp::update()
 }
 
 //--------------------------------------------------------------
-static ofRectangle resolveSlider() {
-    int x = ofGetViewportWidth() - 20 - 48;
-    int w = 32;
-    int y = 20 + 64 + 20 + 20;
-    int h = ofGetViewportHeight() - y - 20;
-    return ofRectangle(x, y, w, h);
+void ofApp::draw()
+{
+    ofEnableLighting();
+    ofSetColor(255, 255, 255, 255);
+
+    // draw background
+    ofColor centerColor = ofColor(85, 78, 68);
+    ofColor edgeColor(0, 0, 0);
+    ofBackgroundGradient(centerColor, edgeColor, OF_GRADIENT_CIRCULAR);
+
+    drawGrid();
+    drawUI();
 }
+
+//--------------------------------------------------------------
+void ofApp::keyPressed(int key)
+{
+    switch(key)
+    {
+    case 'f':
+        ofToggleFullscreen();
+        break;
+    case 'h':
+        showHelp = !showHelp;
+        break;
+    case 't':
+        selectTool(static_cast<Tool>((currentTool + static_cast<int>(Unknown) - 1) % static_cast<int>(Unknown))); // next
+        break;
+    case 'T':
+        selectTool(static_cast<Tool>((currentTool + 1) % static_cast<int>(Unknown))); // prev
+        break;
+    case 'r':
+        cam.reset();
+      break;
+    case MODE_Z_KEY:
+    case MODE_Z_KEY_LEFT:
+    case MODE_Z_KEY_RIGHT:
+        if(currentTool == Move){
+            cam.disableMouseMiddleButton();
+        }
+        break;
+    default:
+        std::cout << "key '" << key << "' pressed.\n";
+        break;
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::keyReleased(int key)
+{
+    switch(key)
+    {
+    case MODE_Z_KEY:
+    case MODE_Z_KEY_LEFT:
+    case MODE_Z_KEY_RIGHT:
+        if(currentTool == Move){
+            cam.enableMouseMiddleButton();
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseMoved(int x, int y)
+{
+  for(unsigned int i = 0; i < ui.size(); ++i){
+      ui[i].hover = ui[i].contains(x, y);
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseDragged(int x, int y, int button)
+{
+    // std::cout << "mouseDragged: " << x << ", " << y << " button: " << button << std::endl;
+    if(dragLevel){
+        ofRectangle rect = resolveSlider();
+        rect.scaleFromCenter(0.7f, 0.99f);
+        resolveLevel = std::max(0, std::min(MAX_RESOLUTION, (int)std::floor(0.5f + MAX_RESOLUTION * (y - rect.y) / std::max(1.0f, rect.height)) ));
+        return;
+    }
+    if(button == OF_MOUSE_BUTTON_MIDDLE && (currentTool != Move || ofGetKeyPressed(MODE_Z_KEY))){
+        int dy = y - startY;
+        float dh = -dy * 3.0f / ofGetViewportHeight();
+        float delta = getCellSize();
+        lastZ = currentZ;
+        currentZ = std::min(10.0f, std::max(0.0f, std::floor((startZ + dh) / delta) * delta));
+        std::cout << "z from " << lastZ << " to " << currentZ << ", delta=" << delta << ", dh=" << dh << std::endl;
+        return;
+    }
+    switch(currentTool){
+      case Eraser:
+
+        break;
+      case Pen:
+
+        break;
+      case Pencil:
+
+        break;
+      case Swirl:
+
+        break;
+      default:
+        break;
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::mousePressed(int x, int y, int button)
+{
+    // std::cout << "mousePressed: " << x << ", " << y << " button: " << button << std::endl;
+    // tool change
+    Tool tool = Unknown;
+    for(unsigned int i = 0; i < ui.size(); ++i){
+      if(ui[i].hover){
+          tool = static_cast<Tool>(i);
+          break;
+      }
+    }
+    if(tool != Unknown){
+        selectTool(tool);
+        return;
+    }
+    // potential drags
+    startX = lastX = x;
+    startY = lastY = y;
+    startZ = lastZ = currentZ;
+    // slider drag?
+    ofRectangle rect = resolveSlider();
+    if(rect.inside(x, y)){
+        dragLevel = true;
+        if(currentTool == Move){
+            cam.disableMouseInput();
+            cam.disableMouseMiddleButton();
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseReleased(int x, int y, int button)
+{
+    // std::cout << "mouseReleased: " << x << ", " << y << " button: " << button << std::endl;
+    // std::cout << "dragLevel=" << dragLevel << ", currentTool=" << currentTool << "\n";
+    if(dragLevel && currentTool == Move){
+        cam.enableMouseInput();
+        cam.enableMouseMiddleButton();
+    }
+
+    // no more dragging
+    dragLevel = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::windowResized(int w, int h)
+{
+
+}
+
+//--------------------------------------------------------------
+void ofApp::gotMessage(ofMessage msg)
+{
+
+}
+
+//--------------------------------------------------------------
+void ofApp::dragEvent(ofDragInfo dragInfo)
+{
+
+}
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+
+float ofApp::getCellSize() const
+{
+    return 1.0f / float(1 << resolveLevel);
+}
+
 void ofApp::drawUI()
 {
     ofDisableDepthTest();
@@ -127,26 +311,39 @@ void ofApp::drawUI()
     ofEnableDepthTest();
 }
 
-void ofApp::draw()
+void ofApp::drawGrid()
 {
-    ofEnableLighting();
-    ofSetColor(255, 255, 255, 255);
-
-    // draw background
-    ofColor centerColor = ofColor(85, 78, 68);
-    ofColor edgeColor(0, 0, 0);
-    ofBackgroundGradient(centerColor, edgeColor, OF_GRADIENT_CIRCULAR);
-
     cam.begin();
-    float ticks = 10.0f * float(1 << resolveLevel);
-    ofDrawGrid(10.0f, ticks, false, false, false, true);
-    // display mesh
+
+    // 1 = draw ground
+    ofFill();
+    ofSetColor(100, 100, 100, 100);
+    ofDrawPlane(20.0f, 20.0f);
+
+    // 2 = draw selection plane
+    ofPushMatrix();
+    {
+        ofTranslate(0.0f, 0.0f, currentZ + 1e-5f);
+        ofSetColor(0, 100, 255, 255);
+        float ticks = 10.0f * float(1 << resolveLevel);
+        ofDrawGrid(10.0f, ticks, false, false, false, true);
+    }
+    ofPopMatrix();
+
+    // 3 = draw z-axis if in z mode
+    if(ofGetKeyPressed('z')){
+        ofNoFill();
+        ofSetColor(0, 0, 255, 255);
+        ofDrawBox(0.0f, 0.0f, 5.0f, 20.0f, 20.0f, 10.0f);
+    }
+
+    // display selected cell
     if(currentTool != Move){
         // show selection on grid
         ofSetColor(255, 255, 255, 100);
 
         ofVec3f pos = mouseOnPlane();
-        float cellSize = 1.0f / float(1 << resolveLevel);
+        float cellSize = getCellSize();
         float cellRadius = cellSize * 0.5f;
         float voxX = std::floor(pos.x / cellSize) * cellSize;
         float voxY = std::floor(pos.y / cellSize) * cellSize;
@@ -154,142 +351,7 @@ void ofApp::draw()
         ofDrawPlane(voxX + cellRadius, voxY + cellRadius, pos.z, cellSize, cellSize);
         // std::cout << "@" << voxX << ", " << voxY << std::endl;
     }
-    //mesh.draw(OF_MESH_FILL);
-    // mesh.drawFaces();
-    // dispMesh.draw();
-
-    // display edges?
-    /*
-    dispMesh.disableColors();
-    dispMesh.drawWireframe();
-    dispMesh.enableColors();
-    */
-    // mesh.draw(OF_MESH_WIREFRAME);
     cam.end();
-
-    drawUI();
-}
-
-//--------------------------------------------------------------
-void ofApp::keyPressed(int key)
-{
-    switch(key)
-    {
-    case 'f':
-        ofToggleFullscreen();
-        break;
-    case 'h':
-        showHelp = !showHelp;
-        break;
-    case 't':
-        selectTool(static_cast<Tool>((currentTool + static_cast<int>(Unknown) - 1) % static_cast<int>(Unknown)));
-        break;
-    case 'r':
-    {
-        // reset
-    } break;
-    }
-}
-
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key)
-{
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y)
-{
-  for(unsigned int i = 0; i < ui.size(); ++i){
-      ui[i].hover = ui[i].contains(x, y);
-  }
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button)
-{
-    // std::cout << "mouseDragged: " << x << ", " << y << " button: " << button << std::endl;
-    if(dragLevel){
-        ofRectangle rect = resolveSlider();
-        rect.scaleFromCenter(0.7f, 0.99f);
-        resolveLevel = std::max(0, std::min(MAX_RESOLUTION, (int)std::floor(0.5f + MAX_RESOLUTION * (y - rect.y) / std::max(1.0f, rect.height)) ));
-        return;
-    }
-    switch(currentTool){
-      case Eraser:
-
-        break;
-      case Pen:
-
-        break;
-      case Pencil:
-
-        break;
-      case Swirl:
-
-        break;
-      default:
-        break;
-    }
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button)
-{
-    // std::cout << "mousePressed: " << x << ", " << y << " button: " << button << std::endl;
-    // tool change
-    Tool tool = Unknown;
-    for(unsigned int i = 0; i < ui.size(); ++i){
-      if(ui[i].hover){
-          tool = static_cast<Tool>(i);
-          break;
-      }
-    }
-    if(tool != Unknown){
-        selectTool(tool);
-        return;
-    }
-    // slider drag?
-    ofRectangle rect = resolveSlider();
-    if(rect.inside(x, y)){
-        dragLevel = true;
-        if(currentTool == Move){
-            cam.disableMouseInput();
-            cam.disableMouseMiddleButton();
-        }
-    }
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button)
-{
-    // std::cout << "mouseReleased: " << x << ", " << y << " button: " << button << std::endl;
-    // std::cout << "dragLevel=" << dragLevel << ", currentTool=" << currentTool << "\n";
-    if(dragLevel && currentTool == Move){
-        cam.enableMouseInput();
-        cam.enableMouseMiddleButton();
-    }
-
-    // no more dragging
-    dragLevel = false;
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h)
-{
-
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg)
-{
-
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo)
-{
-
 }
 
 void ofApp::selectTool(Tool tool)
