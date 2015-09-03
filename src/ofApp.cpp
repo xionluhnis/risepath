@@ -19,10 +19,18 @@ static ofRectangle resolveSlider() {
     int h = ofGetViewportHeight() - y - 20;
     return ofRectangle(x, y, w, h);
 }
-
 //--------------------------------------------------------------
 void ofApp::setup()
 {
+    std::cout << "Initializing OpenVDB.\n";
+    openvdb::initialize();
+    grid = ofVoxelGrid::create();
+    voxels = grid->getAccessor();
+    // set world transformation
+    grid->setTransform(
+        openvdb::math::Transform::createLinearTransform(/*voxel size=*/ 1.0 / double(1 << 5)));
+
+    std::cout << "Initializing GL Context.\n";
     currentTool = Move;
     showHelp = showTools = true;
     ofSetFrameRate(24);
@@ -39,6 +47,7 @@ void ofApp::setup()
     light.setPointLight();
     light.setPosition(0, 0, 300);
 
+    std::cout << "Initializing UI.\n";
     // load the button images
     const char * files[] = {
       "eraser.png", "swirl.png", "pen.png", "pencil.png", "move.png"
@@ -142,12 +151,30 @@ void ofApp::keyReleased(int key)
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y)
 {
-  for(unsigned int i = 0; i < ui.size(); ++i){
-      ui[i].hover = ui[i].contains(x, y);
-  }
+    for(unsigned int i = 0; i < ui.size(); ++i){
+        ui[i].hover = ui[i].contains(x, y);
+    }
 }
 
 //--------------------------------------------------------------
+static void updateVoxels(ofVoxels &voxels, const ofVec3f &p, int level, bool value)
+{
+    int c[3];
+    for(int i = 0; i < 3; ++i)
+        c[i] = std::floor(p[i] / float(1 << 5)) * (1 << 5);
+    int dim = level == 5 ? 0 : (1 << 5 - level - 1);
+    openvdb::Coord ijk;
+    int &i = ijk[0], &j = ijk[1], &k = ijk[2];
+    for (i = c[0] - dim; i < c[0] + dim; ++i) {
+        for (j = c[1] - dim; j < c[1] + dim; ++j) {
+            for (k = c[2] - dim; k < c[2] + dim; ++k) {
+                // Set the distance for voxel (i,j,k).
+                voxels.setValue(ijk, value);
+            }
+        }
+    }
+}
+
 void ofApp::mouseDragged(int x, int y, int button)
 {
     // std::cout << "mouseDragged: " << x << ", " << y << " button: " << button << std::endl;
@@ -166,12 +193,21 @@ void ofApp::mouseDragged(int x, int y, int button)
         std::cout << "z from " << lastZ << " to " << currentZ << ", delta=" << delta << ", dh=" << dh << std::endl;
         return;
     }
+    ofVec3f target;
+    if(currentTool != Move){
+      ofVec3f pos = mouseOnPlane();
+      float cellSize = getCellSize();
+      float cellRadius = cellSize * 0.5f;
+      float voxX = std::floor(pos.x / cellSize) * cellSize;
+      float voxY = std::floor(pos.y / cellSize) * cellSize;
+      target = ofVec3f(voxX + cellRadius, voxY + cellRadius, currentZ);
+    }
     switch(currentTool){
       case Eraser:
-
+        updateVoxels(voxels, target, resolveLevel, false);
         break;
       case Pen:
-
+        updateVoxels(voxels, target, resolveLevel, true);
         break;
       case Pencil:
 
@@ -279,7 +315,11 @@ void ofApp::drawUI()
             ofFill();
             // outside
             if(resolveHover)
-                ofSetColor(0, 0, 0, 200);
+                ofSetColor(0ofVec3f pos = mouseOnPlane();
+        float cellSize = getCellSize();
+        float cellRadius = cellSize * 0.5f;
+        float voxX = std::floor(pos.x / cellSize) * cellSize;
+        float voxY = std::floor(pos.y / cellSize) * cellSize;, 0, 0, 200);
             else
                 ofSetColor(0, 0, 0, 100);
             ofRect(rect);
@@ -337,7 +377,7 @@ void ofApp::drawGrid()
         ofDrawBox(0.0f, 0.0f, 5.0f, 20.0f, 20.0f, 10.0f);
     }
 
-    // display selected cell
+    // 4 = display selected cell
     if(currentTool != Move){
         // show selection on grid
         ofSetColor(255, 255, 255, 100);
@@ -351,6 +391,13 @@ void ofApp::drawGrid()
         ofDrawPlane(voxX + cellRadius, voxY + cellRadius, pos.z, cellSize, cellSize);
         // std::cout << "@" << voxX << ", " << voxY << std::endl;
     }
+
+    // 5 = display voxels
+    std::cout << "Voxels:\n";
+    for (typename ofVoxelGrid::ValueOnIter iter = grid->beginValueOn(); iter; ++iter) {
+        std:: << ". " << iter.getBoundingBox() << std::endl;
+    }
+
     cam.end();
 }
 

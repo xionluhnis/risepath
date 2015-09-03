@@ -1,5 +1,6 @@
 #pragma once
 
+#include <openvdb/openvdb.h>
 #include "ofMain.h"
 #include "camera/ofStableCam.h"
 
@@ -29,6 +30,10 @@ enum Tool {
     Unknown = 5
 };
 
+typedef openvdb::BoolGrid           ofVoxelGrid;
+typedef openvdb::BoolGrid::Ptr      ofVoxelGridPtr;
+typedef openvdb::BoolGrid::Accessor ofVoxels;
+
 class ofApp : public ofBaseApp{
 	public:
 		void setup();
@@ -54,18 +59,24 @@ class ofApp : public ofBaseApp{
 
     private:
         // World objects
-        ofStableCam cam;
-        ofLight light;
+        ofStableCam     cam;
+        ofLight         light;
+        // Voxel data
+        ofVoxelGridPtr  grid;
+        ofVoxels        voxels;
 
         // Parameters
-        Tool currentTool;
-        bool showHelp, showTools;
-        unsigned int resolveLevel;
-        float currentZ, startZ, lastZ;
+        Tool            currentTool;
+        bool            showHelp;
+        bool            showTools;
+        unsigned int    resolveLevel;
+        float           currentZ;
+        float           startZ;
+        float           lastZ;
 
         // UI
         std::vector<ofButton> ui;
-        bool dragLevel;
-        int startX, startY;
-        int lastX, lastY;
+        bool            dragLevel;
+        int             startX, startY;
+        int             lastX, lastY;
 };
