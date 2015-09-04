@@ -1,6 +1,7 @@
 #pragma once
 
 #include <openvdb/openvdb.h>
+#include <openvdb/math/Transform.h>
 #include "ofMain.h"
 #include "camera/ofStableCam.h"
 
@@ -30,9 +31,13 @@ enum Tool {
     Unknown = 5
 };
 
-typedef openvdb::BoolGrid           ofVoxelGrid;
-typedef openvdb::BoolGrid::Ptr      ofVoxelGridPtr;
-typedef openvdb::BoolGrid::Accessor ofVoxels;
+typedef openvdb::BoolGrid           ovdbGrid;
+typedef openvdb::BoolGrid::Ptr      ovdbGridPtr;
+typedef openvdb::BoolGrid::Accessor ovdbVoxels;
+typedef openvdb::v3_0_0::math::Transform        ovdbXForm;
+typedef openvdb::v3_0_0::math::Transform::Ptr   ovdbXFormPtr;
+typedef openvdb::Coord              ovdbCoord;
+typedef openvdb::CoordBBox          ovdbCoordBBox;
 
 class ofApp : public ofBaseApp{
 	public:
@@ -41,6 +46,8 @@ class ofApp : public ofBaseApp{
 		void draw();
 		void drawUI();
 		void drawGrid();
+
+		void loadFile(const string &fname);
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -62,9 +69,8 @@ class ofApp : public ofBaseApp{
         ofStableCam     cam;
         ofLight         light;
         // Voxel data
-        ofVoxelGridPtr  grid;
-        ofVoxels        voxels;
-
+        ovdbGridPtr     grid;
+        ovdbXFormPtr    voxelTransform;
         // Parameters
         Tool            currentTool;
         bool            showHelp;
@@ -73,10 +79,10 @@ class ofApp : public ofBaseApp{
         float           currentZ;
         float           startZ;
         float           lastZ;
-
         // UI
         std::vector<ofButton> ui;
         bool            dragLevel;
         int             startX, startY;
         int             lastX, lastY;
+        int             ctrl, shift, alt;
 };
